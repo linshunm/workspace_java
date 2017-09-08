@@ -1,0 +1,71 @@
+package reflection;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.rmi.Remote;
+import java.util.HashMap;
+
+public class Server {
+	
+	private HashMap<Class, Object> objs = new HashMap<Class, Object>();
+	
+	public void service() throws IOException, ClassNotFoundException, SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+	{
+		while(true)
+		{
+			ServerSocket server = new ServerSocket(8081);
+			Socket socket = server.accept();
+			InputStream is = socket.getInputStream();
+			OutputStream os = socket.getOutputStream();
+			
+			ObjectInputStream ois = new ObjectInputStream(is);
+			Object obj = ois.readObject();
+			Call call = (Call) obj;
+			Object retObj = invoke(call);
+			
+			ObjectOutputStream oos = new ObjectOutputStream(os);
+			
+			oos.writeObject(retObj);
+			
+			ois.close();
+			oos.close();
+			is.close();
+			os.close();
+			socket.close();
+		}
+	}
+	
+	private void register()
+	{
+		objs.put(RemoteService.class, new RemoteService());
+	}
+	
+	private Object invoke(Call call) throws ClassNotFoundException, SecurityException, NoSuchMethodException, IllegalArgumentException, IllegalAccessException, InvocationTargetException
+	{
+		Object obj = null;
+		
+		Class classType = Class.forName(call.getClassName());
+		
+		Method method = classType.getMethod(call.getMethodName(), call.getClassParms());
+		
+		obj = method.invoke(objs.get(classType), call.getObjPrams());
+		
+		return obj;
+	}
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
+
+}

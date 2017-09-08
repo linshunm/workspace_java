@@ -1,0 +1,47 @@
+package reflection;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+import utils.Log;
+
+public class Client {
+	
+	public void invoke() throws UnknownHostException, IOException, ClassNotFoundException
+	{
+		Socket socket = new Socket("localhost", 8081);
+		OutputStream os = socket.getOutputStream();
+		InputStream is = socket.getInputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(os);
+		ObjectInputStream ois = new ObjectInputStream(is);
+		
+		Call call = Call.getInstance().getBuilder()
+				.setClassName("reflection.RemoteService")
+				.setMethodName("echo")
+				.setClassParms(new Class[]{String.class})
+				.setObjParams(new Object[]{"hello"})
+				.build();
+		
+		oos.writeObject(call);
+		
+		Object ret = ois.readObject();
+		
+		Log.d((String)ret);
+		
+		
+	}
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
+
+}
